@@ -144,4 +144,4 @@ def handle_message(message):
 
 if __name__ == "__main__":
     print("✅ البوت الذكي يعمل الآن...")
-    bot.infinity_polling(timeout=60, request_timeout=60, long_polling_timeout=60)
+    bot.infinity_polling(timeout=60, long_polling_timeout=60)
