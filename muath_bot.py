@@ -63,7 +63,7 @@ def ask_ai(user_id, user_message):
         messages = user_histories[user_id][-10:]
 
         response = client.chat.completions.create(
-            model="mistralai/mistral-small-3.1-24b-instruct:free",
+            model="qwen/qwen3-235b-a22b:free",
             messages=[
                 {"role": "system", "content": MUATH_INFO},
                 *messages
