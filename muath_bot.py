@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 import telebot
-from groq import Groq
+from openai import OpenAI
 import os
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 bot = telebot.TeleBot(BOT_TOKEN)
-client = Groq(api_key=GROQ_API_KEY)
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY
+)
 
 MUATH_INFO = """
 تعريف البوت
-هذا بوت يعرف محمد معاذ عبد الخالق الغيبر ويجاوب على الأسئلة عنه.
+هذا بوت يعرف محمد معاذ ويجاوب على الأسئلة عنه.
 البوت يتكلم عن محمد معاذ بضمير الغائب، وكأنه شخص يعرفه ويصفه للناس.
 
 معلومات عن محمد معاذ
-محمد معاذ شاب يمني من تعز. يدرس في كلية علوم الحاسوب، وقريب من عالم البرمجة أكثر من أي شيء ثاني. أكثر لغة اشتغل عليها هي C++، ويحب يفهم الكود سطر سطر، خصوصاً الشروط والحلقات والدوال. إذا شاف كود ما يفهمه يجلس يحلله لين يفهمه بالكامل.
+محمد معاذ شاب يمني من صنعاء تقريباً. يدرس في كلية علوم الحاسوب، وقريب من عالم البرمجة أكثر من أي شيء ثاني. أكثر لغة اشتغل عليها هي C++، ويحب يفهم الكود سطر سطر، خصوصاً الشروط والحلقات والدوال. إذا شاف كود ما يفهمه يجلس يحلله لين يفهمه بالكامل.
 هو يبرمج باستخدام Visual Studio Code ومركب MinGW عشان يشغل برامج C++.
 وعنده مواد في الجامعة مثل هياكل البيانات والتصميم المنطقي الرقمي.
 الرياضيات ما هي أكثر شيء يحبه في الدراسة، وأحياناً يشوفها معقدة شوي، لكن يتعامل معها لأنها جزء من تخصصه.
@@ -47,23 +50,40 @@ MUATH_INFO = """
 
 user_histories = {}
 
-def ask_groq(user_id, user_message):
+def ask_ai(user_id, user_message):
     try:
         if user_id not in user_histories:
             user_histories[user_id] = []
-        user_histories[user_id].append({"role": "user", "content": user_message})
+
+        user_histories[user_id].append({
+            "role": "user",
+            "content": user_message
+        })
+
         messages = user_histories[user_id][-10:]
+
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": MUATH_INFO}, *messages],
+            model="google/gemini-2.0-flash-exp:free",
+            messages=[
+                {"role": "system", "content": MUATH_INFO},
+                *messages
+            ],
             max_tokens=1024,
             temperature=0.9,
         )
+
         reply = response.choices[0].message.content
-        user_histories[user_id].append({"role": "assistant", "content": reply})
+
+        user_histories[user_id].append({
+            "role": "assistant",
+            "content": reply
+        })
+
         if len(user_histories[user_id]) > 20:
             user_histories[user_id] = user_histories[user_id][-20:]
+
         return reply
+
     except Exception as e:
         return f"عذراً، حدث خطأ: {str(e)} 🔄"
 
@@ -71,15 +91,14 @@ def ask_groq(user_id, user_message):
 def start(message):
     name = message.from_user.first_name or "صديقي"
     text = (
-        f"👋 أهلاً {name}!\n\n"
+        f"أهلاً {name}!\n\n"
         f"أنا بوت محمد معاذ 🤖\n"
         f"تقدر تسألني عن أي شيء يخصه، مثلاً:\n\n"
-        f"• ما اسمه الكامل؟\n"
-        f"• وين يدرس؟\n"
-        f"• إيش أكلته المفضلة؟\n"
-        f"• إيش هواياته؟\n"
-        f"• إيش أغرب شيء عنه؟\n\n"
-        f"اسأل براحتك! 😊"
+        f"• مين هو محمد معاذ؟\n"
+        f"• ايش يدرس؟\n"
+        f"• ايش اهتماماته؟\n"
+        f"• ايش شخصيته؟\n\n"
+        f"اسأل براحتك!"
     )
     bot.send_message(message.chat.id, text)
 
@@ -88,7 +107,7 @@ def clear(message):
     user_id = message.from_user.id
     if user_id in user_histories:
         del user_histories[user_id]
-    bot.send_message(message.chat.id, "✅ تم مسح المحادثة!")
+    bot.send_message(message.chat.id, "تم مسح المحادثة! ابدأ من جديد 😊")
 
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
@@ -96,10 +115,10 @@ def handle_message(message):
     name = message.from_user.first_name or "مجهول"
     print(f"[{name}]: {message.text}")
     bot.send_chat_action(message.chat.id, "typing")
-    reply = ask_groq(uid, message.text)
+    reply = ask_ai(uid, message.text)
     print(f"[البوت]: {reply}")
     bot.send_message(message.chat.id, reply)
 
 if __name__ == "__main__":
-    print("✅ البوت الذكي يعمل الآن...")
+    print("✅ البوت يعمل الآن...")
     bot.infinity_polling(timeout=60, long_polling_timeout=60)
