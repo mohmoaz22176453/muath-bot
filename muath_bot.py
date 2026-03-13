@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 import telebot
-from openai import OpenAI
+from groq import Groq
 import os
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 bot = telebot.TeleBot(BOT_TOKEN)
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-)
+client = Groq(api_key=GROQ_API_KEY)
 
 MUATH_INFO = """
 تعريف البوت
@@ -63,7 +60,7 @@ def ask_ai(user_id, user_message):
         messages = user_histories[user_id][-10:]
 
         response = client.chat.completions.create(
-            model="qwen/qwen3-235b-a22b:free",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": MUATH_INFO},
                 *messages
