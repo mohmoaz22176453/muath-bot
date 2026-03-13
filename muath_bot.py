@@ -120,7 +120,6 @@ def start(message):
         f"• وين يدرس؟\n"
         f"• إيش أكلته المفضلة؟\n"
         f"• إيش هواياته؟\n"
-        f"• هل هو ذكاء اصطناعي؟\n"
         f"• إيش أغرب شيء عنه؟\n\n"
         f"اسأل براحتك! 😊"
     )
@@ -136,8 +135,11 @@ def clear(message):
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
     uid = message.from_user.id
+    name = message.from_user.first_name or "مجهول"
+    print(f"[{name}]: {message.text}")
     bot.send_chat_action(message.chat.id, "typing")
     reply = ask_groq(uid, message.text)
+    print(f"[البوت]: {reply}")
     bot.send_message(message.chat.id, reply)
 
 if __name__ == "__main__":
